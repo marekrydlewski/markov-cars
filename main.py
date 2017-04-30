@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from scipy.stats import poisson
+from scipy.stats import poisson, skellam
 
 # | | | car rental 1
 # |
@@ -63,12 +63,18 @@ def get_policy(utils):
     pass
 
 if __name__ == "__main__":
+    # poisson distribution
     rents = []
     returns = []
     rents.append([poisson.pmf(x, mu=3) for x in range(21)])
     rents.append([poisson.pmf(x, mu=4) for x in range(21)])
     returns.append([poisson.pmf(x, mu=3) for x in range(21)])
     returns.append([poisson.pmf(x, mu=2) for x in range(21)])
+
+    # skellam distribution
+    rentals = []
+    rentals.append([skellam.pmf(x, 3, 3) for x in range(-20, 21,  1)])
+    rentals.append([skellam.pmf(x, 2, 4) for x in range(-20, 21, 1)])
 
     utils = value_iteration()
     # M = 20
