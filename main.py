@@ -105,8 +105,16 @@ def get_policy(utils):
     return policy
 
 
-def get_policy_for_field:
-    pass
+def get_policy_for_field(i, j):
+    moves_scores = []
+    for move in range(-5, 6, 1):
+        # check whether move is possible
+        if i - move >= 0 and j + move >= 0:
+            moves_scores.append((move, assess_move(i, j, move)))
+    return max(moves_scores, key=lambda p: p[1])[0]
+
+
+def assess_move(i, j, move):
 
 
 if __name__ == "__main__":
