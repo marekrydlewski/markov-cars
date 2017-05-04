@@ -25,10 +25,9 @@ rents = [[poisson.pmf(x, mu=3) for x in range(21)], [poisson.pmf(x, mu=4) for x 
 returns = [[poisson.pmf(x, mu=3) for x in range(21)], [poisson.pmf(x, mu=2) for x in range(21)]]
 
 
-def get_rentals_prob(i, j):
+def get_rentals_prob(rental, i):
     i_normalized = i + 20
-    j_normalized = j + 20
-    return rentals[0][i_normalized] * rentals[1][j_normalized]
+    return rentals[rental][i_normalized]
 
 
 # i and j before move
@@ -44,17 +43,25 @@ def get_reward(i, j, move):
 
 
 def get_discount(i, j, move):
-    return get_reward(i, j, move) + gamma * get_conditional_probs_utils(i, j, move, utilities)
+    return get_reward(i, j, move) + gamma * get_conditional_prob_utils(i, j, move, utilities)
 
 
 # sum of probabilities multiplied by utilities
-def get_conditional_probs_utils(i, j, move, util):
-    local_sum = 0.0
+def get_conditional_prob_utils(i, j, move, util):
     # return 1
     i, j = get_move_possible(i, j, move)
+    # normalization, count all for now
+    local_sum = 0.0
     for i_poss, row in enumerate(utilities):
         for j_poss, item in enumerate(row):
-            pass
+            local_sum += get_rentals_prob(0, i_poss - i) * get_rentals_prob(1, j_poss - j)
+
+    prob = 0.0
+    for i_poss, row in enumerate(utilities):
+        for j_poss, item in enumerate(row):
+            prob += (get_rentals_prob(0, i_poss - i) * get_rentals_prob(1, j_poss - j)) / local_sum * util[i_poss][
+                j_poss]
+    return prob
 
 
 def get_bellman(i, j):
@@ -80,22 +87,45 @@ def get_move_possible(i, j, move):
 def value_iteration():
     global utilities_next
     global utilities
-    for r in range(2):
+    for r in range(20):
         utilities = utilities_next
         utilities_next = np.zeros((21, 21)).tolist()
         for i, row in enumerate(utilities):
             for j, item in enumerate(row):
                 utilities_next[i][j] = get_bellman(i, j)[1]
-    return np.random.randint(-5, 5, (21, 21))
+    return utilities_next
 
 
 def get_policy(utils):
+    # it has to have the same transition model like in get_conditional_prob
+    policy = np.zeros((21, 21)).tolist()
+    for i, row in enumerate(utils):
+        for j, item in enumerate(row):
+            policy[i][j] = get_policy_for_field(i, j)
+    return policy
+
+
+def get_policy_for_field:
     pass
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     utils = value_iteration()
-    # M = 20
+    M = 20
+
+    for i in range(M + 1):
+        for j in range(M + 1):
+            print('{:06.2f}'.format(utils[i][j]), end=' ')
+        print()
+
+    policy = get_policy(utils)
+
+    for i in range(M + 1):
+        for j in range(M + 1):
+            print("{:2d} ".format(policy[i][j]), end=' ')
+        print()
+
+
     # policy = random.randint(-5, 5, (M+1, M+1))
 
     # for i in range(M + 1):
