@@ -14,8 +14,7 @@ returns_2 = 2
 move_cost = 20
 car_reward = 100
 gamma = 0.9
-utilities = np.zeros((21, 21)).tolist()
-utilities_next = np.zeros((21, 21)).tolist()
+
 
 # skellam distribution
 rentals = [[skellam.pmf(x, 3, 3) for x in range(-20, 21, 1)], [skellam.pmf(x, 2, 4) for x in range(-20, 21, 1)]]
@@ -42,8 +41,8 @@ def get_reward(i, j, move):
     return i + j + (r1 + r2) * 100 - abs(move) * 20
 
 
-def get_discount(i, j, move):
-    return get_reward(i, j, move) + gamma * get_conditional_prob_utils(i, j, move, utilities)
+def get_discount(i, j, move, util):
+    return get_reward(i, j, move) + gamma * get_conditional_prob_utils(i, j, move, util)
 
 
 # sum of probabilities multiplied by utilities
@@ -52,24 +51,24 @@ def get_conditional_prob_utils(i, j, move, util):
     i, j = get_move_possible(i, j, move)
     # normalization, count all for now
     local_sum = 0.0
-    for i_poss, row in enumerate(utilities):
+    for i_poss, row in enumerate(util):
         for j_poss, item in enumerate(row):
             local_sum += get_rentals_prob(0, i_poss - i) * get_rentals_prob(1, j_poss - j)
 
     prob = 0.0
-    for i_poss, row in enumerate(utilities):
+    for i_poss, row in enumerate(util):
         for j_poss, item in enumerate(row):
             prob += (get_rentals_prob(0, i_poss - i) * get_rentals_prob(1, j_poss - j)) / local_sum * util[i_poss][
                 j_poss]
     return prob
 
 
-def get_bellman(i, j):
+def get_bellman(i, j, util):
     moves_scores = []
     for move in range(-5, 6, 1):
         # check whether move is possible
         if i - move >= 0 and j + move >= 0:
-            moves_scores.append((move, get_discount(i, j, move)))
+            moves_scores.append((move, get_discount(i, j, move, util)))
     return max(moves_scores, key=lambda p: p[1])
 
 
@@ -85,14 +84,14 @@ def get_move_possible(i, j, move):
 
 
 def value_iteration():
-    global utilities_next
-    global utilities
+    utilities = np.zeros((21, 21)).tolist()
+    utilities_next = np.zeros((21, 21)).tolist()
     for r in range(20):
         utilities = utilities_next
         utilities_next = np.zeros((21, 21)).tolist()
         for i, row in enumerate(utilities):
             for j, item in enumerate(row):
-                utilities_next[i][j] = get_bellman(i, j)[1]
+                utilities_next[i][j] = get_bellman(i, j, utilities)[1]
     return utilities_next
 
 
@@ -101,20 +100,32 @@ def get_policy(utils):
     policy = np.zeros((21, 21)).tolist()
     for i, row in enumerate(utils):
         for j, item in enumerate(row):
-            policy[i][j] = get_policy_for_field(i, j)
+            policy[i][j] = get_policy_for_field(i, j, utils)
     return policy
 
 
-def get_policy_for_field(i, j):
+def get_policy_for_field(i, j, utils):
     moves_scores = []
     for move in range(-5, 6, 1):
         # check whether move is possible
         if i - move >= 0 and j + move >= 0:
-            moves_scores.append((move, assess_move(i, j, move)))
+            moves_scores.append((move, get_conditional_prob_utils(i, j, move, utils)))
     return max(moves_scores, key=lambda p: p[1])[0]
 
 
-def assess_move(i, j, move):
+# def assess_move(i, j, move, utils):
+#     i, j = get_move_possible(i, j, move)
+#     # normalization, count all for now
+#     local_sum = 0.0
+#     for i_poss, row in enumerate(utils):
+#         for j_poss, item in enumerate(row):
+#             local_sum += get_rentals_prob(0, i_poss - i) * get_rentals_prob(1, j_poss - j)
+#
+#     prob = 0.0
+#     for i_poss, row in enumerate(utilities):
+#         for j_poss, item in enumerate(row):
+#             prob += (get_rentals_prob(0, i_poss - i) * get_rentals_prob(1, j_poss - j)) / local_sum * utils[i_poss][j_poss]
+#     return prob
 
 
 if __name__ == "__main__":
@@ -130,7 +141,7 @@ if __name__ == "__main__":
 
     for i in range(M + 1):
         for j in range(M + 1):
-            print("{:2d} ".format(policy[i][j]), end=' ')
+            print("{:2d} ".format(policy[i][j]), end='')
         print()
 
 
