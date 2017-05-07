@@ -14,6 +14,7 @@ returns_2 = 2
 move_cost = 20
 car_reward = 100
 gamma = 0.9
+M = 20
 
 
 # skellam distribution
@@ -76,19 +77,19 @@ def get_move_possible(i, j, move):
     # check what if is too much cars in one rental
     i -= move
     j += move
-    if i > 20:
-        i = 20
-    if j > 20:
-        j = 20
+    if i > M:
+        i = M
+    if j > M:
+        j = M
     return i, j
 
 
 def value_iteration():
-    utilities = np.zeros((21, 21)).tolist()
-    utilities_next = np.zeros((21, 21)).tolist()
+    utilities = np.zeros((M + 1, M + 1)).tolist()
+    utilities_next = np.zeros((M + 1, M + 1)).tolist()
     for r in range(20):
         utilities = utilities_next
-        utilities_next = np.zeros((21, 21)).tolist()
+        utilities_next = np.zeros((M + 1, M + 1)).tolist()
         for i, row in enumerate(utilities):
             for j, item in enumerate(row):
                 utilities_next[i][j] = get_bellman(i, j, utilities)[1]
@@ -97,7 +98,7 @@ def value_iteration():
 
 def get_policy(utils):
     # it has to have the same transition model like in get_conditional_prob
-    policy = np.zeros((21, 21)).tolist()
+    policy = np.zeros((M + 1, M + 1)).tolist()
     for i, row in enumerate(utils):
         for j, item in enumerate(row):
             policy[i][j] = get_policy_for_field(i, j, utils)
@@ -130,7 +131,6 @@ def get_policy_for_field(i, j, utils):
 
 if __name__ == "__main__":
     utils = value_iteration()
-    M = 20
 
     for i in range(M + 1):
         for j in range(M + 1):
