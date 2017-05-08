@@ -21,8 +21,11 @@ M = 20
 rentals = [[skellam.pmf(x, 3, 3) for x in range(-20, 21, 1)], [skellam.pmf(x, 2, 4) for x in range(-20, 21, 1)]]
 
 # poisson distribution
-rents = [[poisson.pmf(x, mu=3) for x in range(21)], [poisson.pmf(x, mu=4) for x in range(21)]]
-returns = [[poisson.pmf(x, mu=3) for x in range(21)], [poisson.pmf(x, mu=2) for x in range(21)]]
+rents = [[poisson.pmf(x, mu=3) for x in range(50)], [poisson.pmf(x, mu=4) for x in range(50)]]
+returns = [[poisson.pmf(x, mu=3) for x in range(50)], [poisson.pmf(x, mu=2) for x in range(50)]]
+
+# rewards via poisson distribution
+rent_rewards = [[car_reward * x for x in rents[0]], [car_reward * x for x in rents[1]]]
 
 
 def get_rentals_prob(rental, i):
@@ -37,9 +40,15 @@ def get_reward(i, j, move):
         print("Something went wrong")
         return 0
 
-    r1 = rent_1 if rent_1 <= i else i
-    r2 = rent_2 if rent_2 <= j else j
-    return i + j + (r1 + r2) * 100 - abs(move) * 20
+    r1 = 0
+    for p1 in range(i + 1):
+       r1 += (rents[0][p1] * p1)
+
+    r2 = 0
+    for p2 in range(j + 1):
+       r2 += (rents[1][p2] * p2)
+
+    return (r1 + r2) * 100 - abs(move) * 20 # + i + j
 
 
 def get_discount(i, j, move, util):
@@ -48,7 +57,6 @@ def get_discount(i, j, move, util):
 
 # sum of probabilities multiplied by utilities
 def get_conditional_prob_utils(i, j, move, util):
-    # return 1
     i, j = get_move_possible(i, j, move)
     # normalization, count all for now
     local_sum = 0.0
@@ -62,6 +70,33 @@ def get_conditional_prob_utils(i, j, move, util):
             prob += (get_rentals_prob(0, i_poss - i) * get_rentals_prob(1, j_poss - j)) / local_sum * util[i_poss][
                 j_poss]
     return prob
+
+# def get_conditional_prob_utils(i, j, move, util):
+#     # return 1
+#     i, j = get_move_possible(i, j, move)
+#     partial_util = np.zeros((M + 1, M + 1)).tolist()
+#     partial_util_i, partial_util_j = np.zeros((M + 1)).tolist(), np.zeros((M + 1)).tolist()
+#     # normalization, count all for now
+#     local_sum_i, local_sum_j = 0.0, 0.0s
+#     for i_poss, row in enumerate(util):
+#         for j_poss, item in enumerate(row):
+#             partial_sum_i, partial_sum_j = 0.0, 0.0
+#             i_diff = i_poss - i     # jeśli dodatnie to wiecej zwrotow jesli ujemne to wypozyczen
+#             if i_diff >= 0:     # jesli wiecej zwrotow
+#                 for ret in range(i_diff, M + 1):
+#                     partial_sum_i += (returns[0][ret] * rents[0][ret - i_diff])
+#             else:    # wiecej wypozyczen
+#                 for rent in range(abs(i_diff), M + 1):
+#                     partial_sum_i += (returns[0][rent + i_diff] * rents[0][rent])
+#             partial_util_i[i_poss][j_poss] = partial_sum_i
+#             local_sum_j += partial_sum_i
+#
+#     prob = 0.0
+#     for i_poss, row in enumerate(util):
+#         for j_poss, item in enumerate(row):
+#             prob += (get_rentals_prob(0, i_poss - i) * get_rentals_prob(1, j_poss - j)) / local_sum * util[i_poss][
+#                 j_poss]
+#     return prob
 
 
 def get_bellman(i, j, util):
@@ -90,6 +125,7 @@ def value_iteration():
     for r in range(20):
         utilities = utilities_next
         utilities_next = np.zeros((M + 1, M + 1)).tolist()
+        print(r)
         for i, row in enumerate(utilities):
             for j, item in enumerate(row):
                 utilities_next[i][j] = get_bellman(i, j, utilities)[1]
